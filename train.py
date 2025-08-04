@@ -47,13 +47,12 @@ def semantic_segmentation_train(net_name, versions, use_half_training, model, de
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log_handler.info("Model: {} Total_params: {}".format(net_name, pytorch_total_params))
 
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=old_lr, eps=1e-8)  # 半精度训练将默认eps=1e-8改大1e-3
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=old_lr, eps=1e-8)  
     loss_func = dice_bce_loss()
 
     if resume > 1:
         log_handler.info("Resume training from epoch {}".format(resume))
         model.load_state_dict(torch.load('./weights/' + NAME + '_lastest_Lr.pth'))
-        # model.load_state_dict(torch.load("./weights/{}_Interrupt_epoch_{}.pth".format(NAME, resume)))
     try:
         all_train_loss, all_val_loss, all_train_FWIoU, all_val_FWIoU = [], [], [], []
         epoch = 1
@@ -61,7 +60,7 @@ def semantic_segmentation_train(net_name, versions, use_half_training, model, de
         for epoch in range(0 + resume, total_epoch + 1):
             dt_size = len(train_data_loader.dataset)
             Iterations = (dt_size - 1) // train_data_loader.batch_size + 1  # drop_last=True, do not add 1
-            print_frequency = Iterations // 10  # 每个epoch 只打印 n 个iteration信息
+            print_frequency = Iterations // 10 
             gap_frequency = 500000
             log_handler.info(
                 'Train_Epoch = [%3d/%3d] | Iterations = %3d | LearningRate = %.8f | %s' % (epoch, total_epoch,
@@ -116,8 +115,8 @@ def semantic_segmentation_train(net_name, versions, use_half_training, model, de
             log_handler.info('Val_Epoch = [%3d/%3d] | Iterations = %3d | LearningRate = %.8f | %s' % (
             epoch, total_epoch, Iterations, optimizer.state_dict()['param_groups'][0]['lr'],
             str(datetime.datetime.now())))
-            model.eval()  # eval模式 dropout失效，batch normal停止更新，使用训练阶段的mean和var值
-            torch.no_grad()  # 停止自动求导，节省算力和显存
+            model.eval()  
+            torch.no_grad()  
 
             val_epoch_loss, val_epoch_FWIoU, val_evalus_res = 0, 0, None
             print_frequency_count = 0
@@ -145,7 +144,7 @@ def semantic_segmentation_train(net_name, versions, use_half_training, model, de
             log_handler.info("{}_Val_Epoch_{}_AvgLoss_{}_FWIoU_{}".format(str(datetime.datetime.now()), epoch,
                                                                           np.around(val_epoch_loss, 5),
                                                                           np.around(val_epoch_FWIoU, 5)))
-            # torch.save(model.state_dict(), "./weights/{}_epoch_{}.pth".format(NAME, epoch))  # 每轮保存一下
+            # torch.save(model.state_dict(), "./weights/{}_epoch_{}.pth".format(NAME, epoch)) 
             # -------------------------------------------------------------------------------------------------------
             # --------------------------------  early stop training trackers  ---------------------------------------
             # ------------ (1) training loss not decrease[0.01] in 3 epochs -> update LR and loop (1) in 6 times
@@ -166,7 +165,7 @@ def semantic_segmentation_train(net_name, versions, use_half_training, model, de
                         "{}_EPOCH_{}_smallest_LR_Early_Stop ...".format(str(datetime.datetime.now()), epoch))
                     break
                 model.load_state_dict(torch.load('./weights/' + NAME + '_lastest_Lr.pth'))
-                new_lr = old_lr / 5  # 回退，缩小学习率进行收敛
+                new_lr = old_lr / 5 
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = new_lr
                 log_handler.info(
