@@ -13,11 +13,10 @@ from preprocess import *
 from data import *
 import skimage.io as io
 
-torch.backends.cudnn.benchmark = True  # 最适卷积实现算法，网络加速
-torch.cuda.empty_cache  # 显存和GPU占用-释放
+torch.backends.cudnn.benchmark = True  
+torch.cuda.empty_cache 
 interp = torch.nn.Upsample(size=(512, 512), mode='bilinear')
 
-# 将控制台的输出，保存到log文件中
 class Logger(object):
     def __init__(self, filename='./logs/all_info.log', stream=sys.stdout):
         self.terminal = stream
@@ -32,7 +31,7 @@ class Logger(object):
 
 
 def dem2model_input(versions, dem_path, label_path=None, fine_size=512, padding=4):
-    dem_map, proj, geotrans, data_type = readtif(dem_path)  # 原生DEMs
+    dem_map, proj, geotrans, data_type = readtif(dem_path)  
     dem_img = dem_map[padding:padding * (-1), padding:padding * (-1)]
 
     dem = get_constant2onezero(dem_img)
