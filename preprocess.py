@@ -14,7 +14,7 @@ from osgeo import gdal
 def readtif(DEM_filepath, is_resample=False, scale=1):
     dataset = gdal.Open(DEM_filepath)
     data = dataset.ReadAsArray()
-    data = np.around(data, 3)              # 控制数据规格，2位数小数
+    data = np.around(data, 3)             
 
     geotrans = list(dataset.GetGeoTransform())
     proj = dataset.GetProjection()
