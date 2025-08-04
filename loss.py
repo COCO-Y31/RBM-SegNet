@@ -9,7 +9,7 @@ class dice_bce_loss(nn.Module):
     def __init__(self, batch=True):
         super(dice_bce_loss, self).__init__()
         self.batch = batch
-        self.bce_loss = nn.CrossEntropyLoss(weight=torch.tensor([0.01, 0.7],device=torch.device('cuda:0')))   # 交叉熵损失函数 内置softmax
+        self.bce_loss = nn.CrossEntropyLoss(weight=torch.tensor([0.01, 0.7],device=torch.device('cuda:0')))  
 
 
     def soft_dice_coeff(self, y_pred, y_true):
@@ -36,56 +36,35 @@ class SegmentationMetric(object):
     def __init__(self, numClass, ignore_labels=None):
         self.numClass = numClass
         self.ignore_labels = ignore_labels
-        self.confusionMatrix = torch.zeros((self.numClass,) * 2)  # 混淆矩阵（空）
+        self.confusionMatrix = torch.zeros((self.numClass,) * 2)  
 
     def pixelAccuracy(self):
-        """
-        整体准确率、精度 Accuracy
-        """
-        # return all class overall pixel accuracy 正确的像素占总像素的比例
-        #  PA = acc = (TP + TN) / (TP + TN + FP + TN)
         acc = torch.diag(self.confusionMatrix).sum() / self.confusionMatrix.sum()
         return acc
 
     def classPixelRecall(self):
-        """
-        查全率 Recall  每个类别的召回、查全率
-        实际真正的正样本中 ( TP + FN )，预测为正例的样本数 ( TP ) 所占的⽐例
-        """
-        # return each category pixel accuracy (precision)
-        # precision = (TP) / TP + FN
         classRecall = torch.diag(self.confusionMatrix) / self.confusionMatrix.sum(axis=1)  # [H,W]->[0,1]
         return classRecall
 
     def classPixelF1(self):
-        """
-        F1 = 2*P*R/(R+P)
-        """
         classF1 = 2*self.classPixelPrecision()*self.classPixelRecall()/(self.classPixelPrecision()+self.classPixelRecall())
         return classF1
 
     def IntersectionOverUnion(self):
-        # Intersection = TP Union = TP + FP + FN
-        # IoU = TP / (TP + FP + FN)
-        intersection = torch.diag(self.confusionMatrix)  # 取对角元素的值，返回列表
+        intersection = torch.diag(self.confusionMatrix)  
         union = torch.sum(self.confusionMatrix, axis=1) + torch.sum(self.confusionMatrix, axis=0) - torch.diag(
-            self.confusionMatrix)  # axis = 1表示混淆矩阵行的值，返回列表； axis = 0表示取混淆矩阵列的值，返回列表
+            self.confusionMatrix)  
         if self.ignore_labels != None:
-            union[self.ignore_labels] = 0  # 排除忽略的类别
-        IoU = intersection / union  # 返回列表，其值为各个类别的IoU
+            union[self.ignore_labels] = 0  
+        IoU = intersection / union  
         return IoU
 
     def meanIntersectionOverUnion(self):
         IoU = self.IntersectionOverUnion()
-        mIoU = IoU[IoU<float('inf')].mean()# 求各类别IoU的平均
+        mIoU = IoU[IoU<float('inf')].mean()
         return mIoU
 
-    def genConfusionMatrix(self, imgPredict, imgLabel):  #
-        """
-        :param imgPredict: tensor [N H W]  model-out需要argmax
-        :param imgLabel:   tensor [N H W]  one-hot需要argmax
-        :return: 混淆矩阵
-        """
+    def genConfusionMatrix(self, imgPredict, imgLabel):  
         assert imgPredict.shape == imgLabel.shape
         mask = (imgLabel >= 0) & (imgLabel < self.numClass)  # same_shape bool_type
         if self.ignore_labels != None:
@@ -97,10 +76,6 @@ class SegmentationMetric(object):
         return confusionMatrix
 
     def Frequency_Weighted_Intersection_over_Union(self):
-        """
-        FWIoU 频权交并比:为MIoU的一种提升 这种方法根据每个类出现的频率为其设置权重。
-        FWIOU =     [(TP+FN)/(TP+FP+TN+FN)] *[TP / (TP + FP + FN)]
-        """
         freq = torch.sum(self.confusionMatrix, axis=1) / torch.sum(self.confusionMatrix)
         iu = np.diag(self.confusionMatrix) / (torch.sum(self.confusionMatrix, axis=1) +
                                               torch.sum(self.confusionMatrix, axis=0) - torch.diag(self.confusionMatrix))
@@ -110,11 +85,11 @@ class SegmentationMetric(object):
     def addBatch(self, imgPredict, imgLabel):
         print(imgPredict.shape,imgLabel.shape)
         assert imgPredict.shape == imgLabel.shape
-        self.confusionMatrix += self.genConfusionMatrix(imgPredict, imgLabel)  # 得到混淆矩阵
+        self.confusionMatrix += self.genConfusionMatrix(imgPredict, imgLabel)  
         return self.confusionMatrix
 
     def reset(self):
-        self.confusionMatrix = torch.zeros((self.numClass,) * 2)  # 混淆矩阵（空） torch.zeros((self.numClass, self.numClass))
+        self.confusionMatrix = torch.zeros((self.numClass,) * 2)  
 
 
     def evalus(self, imgPredict, imgLabel):
