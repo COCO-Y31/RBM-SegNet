@@ -31,7 +31,7 @@ def get_data_list(dem_data_folder, target_data_folder):
         dem_path = os.path.join(dem_data_folder, f)
         target_path = os.path.join(target_data_folder, f.split('.')[0] + '.png')
         label = cv2.imread(target_path, cv2.IMREAD_GRAYSCALE)
-        if label.sum() > label.shape[0]*label.shape[1]*0.01:   # 正负样本都有一些
+        if label.sum() > label.shape[0]*label.shape[1]*0.01:  
             all_data_path.append((dem_path, target_path))
     return all_data_path * 2
 
@@ -45,7 +45,7 @@ class DTM_Dataset(Dataset):
 
     def __getitem__(self, index):
         dem_path, target_path = self.all_data[index]
-        dem_map, proj, geotrans, data_type = readtif(dem_path)   # 原生DEMs
+        dem_map, proj, geotrans, data_type = readtif(dem_path)   
         # dem_map = fill_depression(dem_map)
         dem_img = dem_map[self.padding:self.padding*(-1), self.padding:self.padding*(-1)]
 
